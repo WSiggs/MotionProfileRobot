@@ -37,8 +37,8 @@ public class MotionProfile
         cruiseDistance = distance - (accelDistance+decelDistance);
 
         cruiseTime = cruiseDistance/v_cruise;
-
         // region debugging
+        
         System.out.println("ROBOT VARS: " +
                         "\nAcceleration:\t " + acceleration +
                         "\nV_Cruise Value:\t\t"   +  v_cruise       +
@@ -54,6 +54,7 @@ public class MotionProfile
                 "\nDecel Distance:\t\t "  +  decelDistance);
         // endregion debugging
 
+		
         totalTime = timeToCruise+cruiseTime+timeToStop;
     }
 
@@ -114,5 +115,10 @@ public class MotionProfile
     public double getMaxVelocity()
     {
     	return robot_max_velocity;
+    }
+    
+    public double getV_Cruise()
+    {
+    	return v_cruise;
     }
 }

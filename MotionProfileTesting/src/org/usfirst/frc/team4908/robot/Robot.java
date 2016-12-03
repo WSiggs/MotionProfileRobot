@@ -1,6 +1,8 @@
 
 package org.usfirst.frc.team4908.robot;
 
+import java.text.DecimalFormat;
+
 import org.usfirst.frc.team4908.util.MotionProfile;
 
 import edu.wpi.first.wpilibj.CANTalon;
@@ -40,11 +42,20 @@ public class Robot extends IterativeRobot
     double kI;
     double kD;
     
+    double kVD;
+    double kAD;
+    
+    public DecimalFormat df;
+    
 	double[] mpArray;
 
     int driveCommand;
     
     double startTime;
+    
+    boolean wasPressed = false;
+    
+    int count = 0;
 
     /**
      * This function is run when the robot is first started up and should be
@@ -69,50 +80,64 @@ public class Robot extends IterativeRobot
         
     	drive = new RobotDrive(frontLeft, backLeft, frontRight, backRight);
 
-    	mp = new MotionProfile(2.0, 5.0, -2.0); 
+    	mp = new MotionProfile(1.0, 2.0, -1.0); // accel, max vel, decel
     	
-    	kA = 1/mp.getAcceleration();
-    	kV = 1/mp.getMaxVelocity();
+    	df = new DecimalFormat("0.000");
     	
-    	driveCommand = 0;
+    	kA = 1.0/mp.getAcceleration();
+    	kV = 1.0/mp.getV_Cruise();
+    	
+    	driveCommand = 0; 
+    	
+    	kVD = 0.5;
+    	kAD = 0.5;
     }
     
-    public void autonomousInit() 
-    {
-
-    }
-
-    /**
-     * This function is called periodically during autonomous
-     */
-    public void autonomousPeriodic() 
-    {
-    
-    }
 
     /**
      * This function is called periodically during operator control
      */
     public void teleopPeriodic() 
     {
-        if(launchpad.getRawButton(1))
+        if(stick2.getRawButton(1) && !wasPressed)
         {
-        	mp.calculatePointsForDistance(20);
+        	rightEncoder.reset();
+        	leftEncoder.reset();
+        	
+        	wasPressed = true;
+        	mp.calculatePointsForDistance(10);
         	driveCommand = 1;
-        	startTime = System.currentTimeMillis()/1000;
+        	startTime = System.currentTimeMillis()/1000.0;
+        }
+        
+        if(stick1.getRawButton(1))
+        {
+        	driveCommand = 0;
+        	wasPressed = false;
         }
         
         switch(driveCommand)
         {
         	case 0:
-        		drive.arcadeDrive(stick1.getRawAxis(1), stick1.getRawAxis(2));
+        		drive.arcadeDrive(-stick1.getRawAxis(1), -stick1.getRawAxis(2));
         		break;
         	case 1:
-        		mpDrive((System.currentTimeMillis()/1000) - startTime);
+        		mpDrive((System.currentTimeMillis()/1000.0) - startTime);
         		break;
         	default:
         		break;
         }
+    }
+    
+    public void debugTheStuff(double[] array, double time)
+    {
+        array = mp.getValuesAtTime(time);
+
+        System.out.println("Time: " + df.format(array[0]) + "\tTotal Time: " + df.format(mp.totalTime) +
+
+        "\nTarget Speed: " + df.format(array[2]) + "\tAverage Speed: " + df.format((leftEncoder.getRate() + rightEncoder.getRate())/2.0)
+
+        + "\nTarget Distance: " + df.format(array[1]) + "\tLeft Distance: " + df.format(leftEncoder.getDistance()) + "\tRight Distance: " + df.format(rightEncoder.getDistance()));
     }
     
     /**
@@ -130,11 +155,18 @@ public class Robot extends IterativeRobot
     	if(time <= mp.totalTime)
     	{
     		array = mp.getValuesAtTime(time);
-    		drive.arcadeDrive((0.2*array[2])+(0.5*array[3]), 0);
+    		drive.arcadeDrive(kV*array[2] + 0*kA*array[3], 0);
+    		if (count > 10)
+    		{
+    			debugTheStuff(array, time);
+    			count = 0;
+    		}		
+    		count ++;
     	}
     	else
     	{
     		driveCommand = 0;
+    		wasPressed = false;
     	}
     }
 }
