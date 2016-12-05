@@ -1,0 +1,25 @@
+package org.usfirst.frc.team4908.drive;
+
+import edu.wpi.first.wpilibj.CANTalon;
+import edu.wpi.first.wpilibj.RobotDrive;
+import edu.wpi.first.wpilibj.SpeedController;
+
+public class DuxDrive extends RobotDrive
+{
+	
+	
+	public DuxDrive(SpeedController left, SpeedController right)
+	{
+		super(left, right);
+	}
+
+	public DuxDrive(SpeedController frontLeft, SpeedController frontRight, SpeedController rearLeft, SpeedController rearRight)
+	{
+		super(frontLeft, frontRight, rearLeft, rearLeft);
+	}
+	
+	public void drive(double moveValue, double rotateValue)
+	{
+		
+	}
+}

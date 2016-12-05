@@ -1,0 +1,40 @@
+package org.usfirst.frc.team4908.drive;
+
+import edu.wpi.first.wpilibj.CANTalon;
+import edu.wpi.first.wpilibj.RobotDrive;
+import edu.wpi.first.wpilibj.SpeedController;
+
+public class DuxDrive extends RobotDrive
+{
+	private double maxLeft = 8;
+	private double maxRight = 9;
+	
+	public DuxDrive(SpeedController left, SpeedController right)
+	{
+		super(left, right);
+	}
+
+	public DuxDrive(SpeedController frontLeft, SpeedController frontRight, SpeedController rearLeft, SpeedController rearRight)
+	{
+		super(frontLeft, frontRight, rearLeft, rearLeft);
+	}
+	
+	public void duxArcadeDrive(double moveValue, double rotateValue)
+	{
+		if(maxLeft < maxRight)
+		{
+			
+		}
+	}
+	
+	
+	public void setMaxLeft(double max)
+	{
+		maxLeft = max;
+	}
+	
+	public void setMaxRight(double max)
+	{
+		maxRight = max;
+	}
+}

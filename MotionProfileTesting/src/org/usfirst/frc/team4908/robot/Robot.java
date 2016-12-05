@@ -3,13 +3,14 @@ package org.usfirst.frc.team4908.robot;
 
 import java.text.DecimalFormat;
 
+import org.usfirst.frc.team4908.drive.DuxDrive;
 import org.usfirst.frc.team4908.util.MotionProfile;
+import org.usfirst.frc.team4908.util.Setpoint;
 
 import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.RobotDrive;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -18,6 +19,9 @@ import edu.wpi.first.wpilibj.RobotDrive;
  * creating this project, you must also update the manifest file in the resource
  * directory.
  */
+
+// TODO: Figure out why time is wrong (Really important)
+
 public class Robot extends IterativeRobot 
 {
 	MotionProfile mp;
@@ -33,7 +37,7 @@ public class Robot extends IterativeRobot
 	Joystick stick1;
     Joystick stick2;
     
-    RobotDrive drive;
+    DuxDrive drive;
     
     double kA;
     double kV;
@@ -44,6 +48,16 @@ public class Robot extends IterativeRobot
     
     double kVD;
     double kAD;
+    
+    public double maxLeft = 1.0;
+    public double maxRight = 1.0;
+    public double currentLeft;
+    public double currentRight;
+    
+    private static final double rearLeftDiameter = 7.202;
+    private static final double rearRightDiameter = 7.2115;
+    private static final double frontLeftDiameter = 0;
+    private static final double frontRightDiameter = 0;
     
     public DecimalFormat df;
     
@@ -56,6 +70,8 @@ public class Robot extends IterativeRobot
     boolean wasPressed = false;
     
     int count = 0;
+    
+    double time;
 
     /**
      * This function is run when the robot is first started up and should be
@@ -72,15 +88,15 @@ public class Robot extends IterativeRobot
         stick2 = new Joystick(1);
         
         leftEncoder = new Encoder(3, 2, true);
-        leftEncoder.setDistancePerPulse((2*Math.PI) / 1440); // radians per pulse
+        leftEncoder.setDistancePerPulse(((2*Math.PI) / 1440)*(rearLeftDiameter/2.0)); // radians per pulse
         leftEncoder.setSamplesToAverage(64);
         rightEncoder = new Encoder(7, 6, false);
-        rightEncoder.setDistancePerPulse((2*Math.PI) / 1440);
+        rightEncoder.setDistancePerPulse(((2*Math.PI) / 1440)*(rearRightDiameter/2.0));
         rightEncoder.setSamplesToAverage(64);
         
-    	drive = new RobotDrive(frontLeft, backLeft, frontRight, backRight);
+    	drive = new DuxDrive(frontLeft, backLeft, frontRight, backRight);
 
-    	mp = new MotionProfile(1.0, 2.0, -1.0); // accel, max vel, decel
+    	mp = new MotionProfile(1.0, Math.max(maxLeft, maxRight), -1.0); // accel, max vel, decel
     	
     	df = new DecimalFormat("0.000");
     	
@@ -91,6 +107,7 @@ public class Robot extends IterativeRobot
     	
     	kVD = 0.5;
     	kAD = 0.5;
+    	
     }
     
 
@@ -99,6 +116,10 @@ public class Robot extends IterativeRobot
      */
     public void teleopPeriodic() 
     {
+        currentLeft = leftEncoder.getRate();
+        currentRight = rightEncoder.getRate();
+
+    	
         if(stick2.getRawButton(1) && !wasPressed)
         {
         	rightEncoder.reset();
@@ -119,46 +140,49 @@ public class Robot extends IterativeRobot
         switch(driveCommand)
         {
         	case 0:
-        		drive.arcadeDrive(-stick1.getRawAxis(1), -stick1.getRawAxis(2));
+        		drive.duxArcadeDrive(stick1.getRawAxis(1), stick1.getRawAxis(2));
         		break;
         	case 1:
         		mpDrive((System.currentTimeMillis()/1000.0) - startTime);
+        		time = (System.currentTimeMillis()/1000.0) - startTime;
         		break;
         	default:
         		break;
         }
+        
+        
+        if(currentLeft > maxLeft)
+        {
+        	maxLeft = currentLeft;
+        }
+        
+        if(currentRight > maxRight)
+        {
+        	maxRight = currentRight;
+        }
+        
     }
     
-    public void debugTheStuff(double[] array, double time)
+    public void debugTheStuff(Setpoint currentSetpoint)
     {
-        array = mp.getValuesAtTime(time);
+        mp.setValuesAtTime(time);
 
-        System.out.println("Time: " + df.format(array[0]) + "\tTotal Time: " + df.format(mp.totalTime) +
+        System.out.println("Time: " + df.format(time) + "\tTotal Time: " + df.format(mp.totalTime) +
 
-        "\nTarget Speed: " + df.format(array[2]) + "\tAverage Speed: " + df.format((leftEncoder.getRate() + rightEncoder.getRate())/2.0)
+        "\nTarget Speed: " + df.format(mp.getSetpoint().getVelocity()) + "\tAverage Speed: " + df.format((leftEncoder.getRate() + rightEncoder.getRate())/2.0)
 
-        + "\nTarget Distance: " + df.format(array[1]) + "\tLeft Distance: " + df.format(leftEncoder.getDistance()) + "\tRight Distance: " + df.format(rightEncoder.getDistance()));
-    }
-    
-    /**
-     * This function is called periodically during test mode
-     */
-    public void testPeriodic() 
-    {
-    
+        + "\nTarget Distance: " + df.format(mp.getSetpoint().getPosition()) + "\tLeft Distance: " + df.format(leftEncoder.getDistance()) + "\tRight Distance: " + df.format(rightEncoder.getDistance()));
     }
     
     public void mpDrive(double time)
     {
-    	double[] array;
-
     	if(time <= mp.totalTime)
     	{
-    		array = mp.getValuesAtTime(time);
-    		drive.arcadeDrive(kV*array[2] + 0*kA*array[3], 0);
+    		mp.setValuesAtTime(time);
+    		drive.duxArcadeDrive(kV*mp.getSetpoint().getVelocity() + kA*mp.getSetpoint().getAcceleration(), 0);
     		if (count > 10)
     		{
-    			debugTheStuff(array, time);
+    			debugTheStuff(mp.getSetpoint());
     			count = 0;
     		}		
     		count ++;

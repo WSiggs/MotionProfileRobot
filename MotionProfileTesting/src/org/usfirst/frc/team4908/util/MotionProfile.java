@@ -17,12 +17,16 @@ public class MotionProfile
     public double totalTime;
 
     private double v_cruise;
+    
+    private Setpoint currentSetpoint;
 
     public MotionProfile(double acceleration, double robot_max_velocity, double deceleration)
     {
         this.acceleration = acceleration;
         this.robot_max_velocity = robot_max_velocity;
         this.deceleration = deceleration;
+        
+        currentSetpoint = new Setpoint();
     }
 
     public void calculatePointsForDistance(double distance)
@@ -63,48 +67,38 @@ public class MotionProfile
         return Math.sqrt(2*acceleration*(distance));
     }
 
-    public double[] getValuesAtTime(double time)
+    public void setValuesAtTime(double time)
     {
-        /** Given time will output an array of 4 values in the following order
-         *  arr[0] = time at setpoint
-         *  arr[1] = position at time
-         *  arr[2] = velocity at time
-         *  arr[3] = acceleration
+        /**
          *  All calulations use the kinematic equations
          */
-
-        double[] arr = new double[4];
-
-        arr[0] = time;
-
+    	
         if(time <= timeToCruise && time >= 0)
         {
-            arr[1] = (0.5)*acceleration*time*time;
-            arr[2] = acceleration*time;
-            arr[3] = acceleration;
+            currentSetpoint.setPosition((0.5)*acceleration*time*time);
+            currentSetpoint.setVelocity(acceleration*time);
+            currentSetpoint.setAcceleration(acceleration);
         }
         else if(time > timeToCruise && time <= (timeToCruise + cruiseTime))
         {
             time -= timeToCruise;
-            arr[1] = accelDistance+v_cruise*time;
-            arr[2] = v_cruise;
-            arr[3] = 0;
+            currentSetpoint.setPosition(accelDistance+v_cruise*time);
+            currentSetpoint.setVelocity(v_cruise);
+            currentSetpoint.setAcceleration(0);
         }
         else if(time > timeToCruise+cruiseTime && time <= timeToCruise+cruiseTime+timeToStop)
         {
             time -= (timeToCruise+cruiseTime);
-            arr[1] = (accelDistance+cruiseDistance)+(v_cruise*time)+((0.5)*(deceleration)*(time)*(time));
-            arr[2] = v_cruise+(time*deceleration);
-            arr[3] = deceleration;
+            currentSetpoint.setPosition((accelDistance+cruiseDistance)+(v_cruise*time)+((0.5)*(deceleration)*(time)*(time)));
+            currentSetpoint.setVelocity(v_cruise+(time*deceleration));
+            currentSetpoint.setAcceleration(deceleration);
         }
         else
         {
-            arr[1] = 0;
-            arr[2] = 0;
-            arr[3] = 0;
+            currentSetpoint.setPosition(0.0);
+            currentSetpoint.setVelocity(0.0);
+            currentSetpoint.setAcceleration(0.0);
         }
-
-        return arr;
     }
     
     public double getAcceleration()
@@ -120,5 +114,10 @@ public class MotionProfile
     public double getV_Cruise()
     {
     	return v_cruise;
+    }
+    
+    public Setpoint getSetpoint()
+    {
+    	return currentSetpoint;
     }
 }

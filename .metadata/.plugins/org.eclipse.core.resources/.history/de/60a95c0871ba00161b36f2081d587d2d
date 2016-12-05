@@ -1,0 +1,20 @@
+package org.usfirst.frc.team4908.drive;
+
+import edu.wpi.first.wpilibj.CANTalon;
+
+public class DuxDrive 
+{
+	CANTalon leftMotor;
+	CANTalon rightMotor;
+
+	public DuxDrive(CANTalon leftMotor, CANTalon rightMotor)
+	{
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
+	}
+	
+	public void drive(double moveValue, double rotateValue)
+	{
+		
+	}
+}
