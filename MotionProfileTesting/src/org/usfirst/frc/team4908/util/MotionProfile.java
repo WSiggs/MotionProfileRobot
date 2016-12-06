@@ -33,14 +33,29 @@ public class MotionProfile
     {
         v_cruise = Math.min(robot_max_velocity, calcTheoMax(distance));
 
-        timeToCruise = v_cruise / acceleration;
-        timeToStop = Math.abs(v_cruise / deceleration);
+        if(Math.min(robot_max_velocity, calcTheoMax(distance)) == robot_max_velocity)
+        {
+            timeToCruise = v_cruise / acceleration;
+            timeToStop = Math.abs(v_cruise / deceleration);
 
-        accelDistance = (.5)*acceleration*(timeToCruise*timeToCruise);
-        decelDistance = Math.abs((.5)*deceleration*(timeToStop*timeToStop));
-        cruiseDistance = distance - (accelDistance+decelDistance);
+            accelDistance = (.5)*acceleration*(timeToCruise*timeToCruise);
+            decelDistance = Math.abs((.5)*deceleration*(timeToStop*timeToStop));
+            cruiseDistance = distance - (accelDistance+decelDistance);
 
-        cruiseTime = cruiseDistance/v_cruise;
+            cruiseTime = cruiseDistance/v_cruise;
+        }
+        else
+        {
+            timeToCruise = v_cruise / acceleration;
+            timeToStop = Math.abs(v_cruise / deceleration);
+
+            accelDistance = (.5)*acceleration*(timeToCruise*timeToCruise);
+            decelDistance = Math.abs((.5)*deceleration*(timeToStop*timeToStop));
+            cruiseDistance = 0.0;
+
+            cruiseTime = 0.0;
+        }
+        
         // region debugging
         
         System.out.println("ROBOT VARS: " +
@@ -64,7 +79,7 @@ public class MotionProfile
 
     public double calcTheoMax(double distance)
     {
-        return Math.sqrt(2*acceleration*(distance));
+        return Math.sqrt(2.0*acceleration*(distance));
     }
 
     public void setValuesAtTime(double time)
